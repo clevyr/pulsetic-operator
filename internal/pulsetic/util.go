@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type ResponseError struct {
@@ -47,5 +48,32 @@ func (i *IntBool) UnmarshalJSON(b []byte) error {
 	}
 
 	*i = IntBool(parsed)
+	return nil
+}
+
+type UnixOrTime time.Time
+
+func (t *UnixOrTime) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, []byte("null")) {
+		*t = UnixOrTime(time.Time{})
+		return nil
+	}
+
+	if s, err := strconv.Unquote(string(b)); err == nil {
+		parsed, err := time.Parse(time.RFC3339Nano, s)
+		if err != nil {
+			return err
+		}
+
+		*t = UnixOrTime(parsed)
+		return nil
+	}
+
+	i, err := strconv.ParseInt(string(b), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	*t = UnixOrTime(time.Unix(i, 0))
 	return nil
 }
