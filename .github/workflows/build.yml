@@ -36,6 +36,8 @@ jobs:
     permissions:
       contents: write
       packages: write
+    outputs:
+      digest: ${{ steps.docker_build.outputs.digest }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,6 +61,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - name: Build and Push
+        id: docker_build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -108,7 +111,7 @@ jobs:
       - name: Setup Flux CLI
         uses: fluxcd/flux2/action@v2.5.1
       - name: Generate Installer
-        run: make build-installer IMG=ghcr.io/clevyr/pulsetic-operator:${{ github.ref_name }}
+        run: make build-installer IMG=ghcr.io/clevyr/pulsetic-operator:${{ github.ref_name }}@${{ needs.build.outputs.digest }}
       - name: Publish
         run: |
           flux push artifact \
