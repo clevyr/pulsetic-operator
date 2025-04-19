@@ -84,23 +84,12 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	var create bool
-	psmonitor, err := psclient.Monitors().Get(ctx, pulsetic.FindByID(monitor.Status.ID))
+	psmonitor, err := tryFindMonitor(ctx, psclient, monitor.Status.ID, monitor.Spec.Monitor.URL)
 	if err != nil {
 		if !errors.Is(err, pulsetic.ErrMonitorNotFound) {
 			return ctrl.Result{}, err
 		}
 
-		psmonitor, err = psclient.Monitors().Get(ctx, pulsetic.FindByURL(monitor.Spec.Monitor.URL))
-		if err != nil {
-			if !errors.Is(err, pulsetic.ErrMonitorNotFound) {
-				return ctrl.Result{}, err
-			}
-			create = true
-		}
-	}
-
-	if create {
 		psmonitor, err = psclient.Monitors().Create(ctx, monitor.Spec.Monitor.ToMonitor())
 		if err != nil {
 			return ctrl.Result{}, err
@@ -145,4 +134,16 @@ func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&pulseticv1.Monitor{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Named("monitor").
 		Complete(r)
+}
+
+func tryFindMonitor(ctx context.Context, c pulsetic.Client, id int64, url string) (pulsetic.Monitor, error) {
+	if id != 0 {
+		if psmonitor, err := c.Monitors().Get(ctx, pulsetic.FindByID(id)); err == nil {
+			return psmonitor, nil
+		} else if !errors.Is(err, pulsetic.ErrMonitorNotFound) {
+			return pulsetic.Monitor{}, err
+		}
+	}
+
+	return c.Monitors().Get(ctx, pulsetic.FindByURL(url))
 }
