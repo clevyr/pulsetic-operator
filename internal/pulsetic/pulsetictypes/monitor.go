@@ -8,7 +8,7 @@ package pulsetictypes
 type RequestType uint8
 
 const (
-	RequestTypeHTTP RequestType = iota
+	RequestTypeHTTP RequestType = iota + 1
 	RequestTypeTCP
 	RequestTypeICMP
 )
