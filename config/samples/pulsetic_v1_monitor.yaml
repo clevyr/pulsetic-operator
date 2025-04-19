@@ -1,0 +1,14 @@
+apiVersion: pulsetic.clevyr.com/v1
+kind: Monitor
+metadata:
+  labels:
+    app.kubernetes.io/name: pulsetic-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: example
+spec:
+  interval: 24h
+  prune: true
+  monitor:
+    name: Example
+    url: https://example.com
+    interval: 5m

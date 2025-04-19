@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/TekWizely/pre-commit-golang
+    rev: v1.0.0-rc.1
+    hooks:
+      - id: go-mod-tidy-repo
+      - id: go-fumpt
+        args: [-w]
+      - id: go-vet-mod
+      - id: golangci-lint-mod
+        args: [--fix]
+
+  - repo: local
+    hooks:
+      - id: manifests
+        name: manifests
+        entry: make manifests
+        language: system
+        types: [go]
+        pass_filenames: false
+      - id: generate
+        name: generate
+        entry: make generate
+        language: system
+        types: [go]
+        pass_filenames: false
