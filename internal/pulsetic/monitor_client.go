@@ -33,26 +33,22 @@ func (m MonitorClient) Create(ctx context.Context, monitor Monitor) (Monitor, er
 		return Monitor{}, err
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	res, err := m.client.Do(ctx, http.MethodPost, endpointMonitors, bytes.NewReader(b))
 	if err != nil {
 		return Monitor{}, err
 	}
 	defer consumeAndClose(res.Body)
 
-	for v, err := range iterMonitors(res.Body) {
-		if err != nil {
-			return v, err
-		}
-
-		if v.URL == monitor.URL {
-			cancel()
-			monitor = v
-			break
-		}
+	var monitors []Monitor
+	if err := json.NewDecoder(res.Body).Decode(&monitors); err != nil {
+		return Monitor{}, err
 	}
+	consumeAndClose(res.Body)
+
+	if len(monitors) == 0 {
+		return Monitor{}, ErrMonitorNotFound
+	}
+	monitor.ID = monitors[0].ID
 
 	return m.Update(ctx, monitor.ID, monitor)
 }
