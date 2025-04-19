@@ -87,6 +87,10 @@ func (m MonitorClient) Get(ctx context.Context, opts ...FindOption) (Monitor, er
 	return Monitor{}, ErrMonitorNotFound
 }
 
+type UpdateResponse struct {
+	Data Monitor `json:"data"`
+}
+
 func (m MonitorClient) Update(ctx context.Context, id int64, monitor Monitor) (Monitor, error) {
 	b, err := json.Marshal(monitor.EditParams())
 	if err != nil {
@@ -100,7 +104,12 @@ func (m MonitorClient) Update(ctx context.Context, id int64, monitor Monitor) (M
 	}
 	defer consumeAndClose(res.Body)
 
-	return m.Get(ctx, FindByID(id))
+	var parsed UpdateResponse
+	if err := json.NewDecoder(res.Body).Decode(&parsed); err != nil {
+		return Monitor{}, err
+	}
+
+	return parsed.Data, nil
 }
 
 func (m MonitorClient) Delete(ctx context.Context, id int64) error {
