@@ -1,6 +1,7 @@
 package pulsetic
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"strconv"
@@ -32,3 +33,19 @@ func consumeAndClose(r io.ReadCloser) {
 	_ = r.Close()
 }
 
+type IntBool bool
+
+func (i *IntBool) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, []byte("null")) {
+		*i = false
+		return nil
+	}
+
+	parsed, err := strconv.ParseBool(string(b))
+	if err != nil {
+		return err
+	}
+
+	*i = IntBool(parsed)
+	return nil
+}
