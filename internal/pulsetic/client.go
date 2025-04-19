@@ -52,7 +52,7 @@ func (c Client) Do(ctx context.Context, method, endpoint string, body io.Reader)
 	}
 
 	if res.StatusCode > 400 {
-		errRes := ErrorResponse{Response: res}
+		errRes := ResponseError{Response: res}
 		if b, err := io.ReadAll(res.Body); err == nil {
 			if err := json.Unmarshal(b, &errRes); err != nil {
 				return nil, fmt.Errorf("%w: %s", errRes, b)

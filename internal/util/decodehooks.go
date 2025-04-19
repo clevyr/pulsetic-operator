@@ -18,7 +18,7 @@ func DecodeHookMetav1Duration(from, to reflect.Type, data any) (any, error) {
 	}
 
 	if from.Kind() == reflect.String {
-		d, err := time.ParseDuration(data.(string))
+		d, err := time.ParseDuration(data.(string)) //nolint:errcheck
 		result.Duration = d
 		return result, err
 	}

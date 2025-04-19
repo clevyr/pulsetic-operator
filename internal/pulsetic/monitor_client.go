@@ -1,3 +1,4 @@
+//nolint:bodyclose
 package pulsetic
 
 import (

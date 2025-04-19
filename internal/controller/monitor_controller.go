@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 
+	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
 	"github.com/clevyr/pulsetic-operator/internal/pulsetic"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,11 +29,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
 )
 
-// MonitorReconciler reconciles a Monitor object
+// MonitorReconciler reconciles a Monitor object.
 type MonitorReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -51,7 +50,7 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	_ = log.FromContext(ctx)
 
 	monitor := &pulseticv1.Monitor{}
-	if err := r.Client.Get(ctx, req.NamespacedName, monitor); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, monitor); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -133,7 +132,7 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Monitor{}, "spec.sourceRef", func(rawObj client.Object) []string {
-		monitor := rawObj.(*pulseticv1.Monitor)
+		monitor := rawObj.(*pulseticv1.Monitor) //nolint:errcheck
 		if monitor.Spec.SourceRef == nil {
 			return nil
 		}

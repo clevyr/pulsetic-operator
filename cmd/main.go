@@ -22,13 +22,12 @@ import (
 	"os"
 	"path/filepath"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
+	"github.com/clevyr/pulsetic-operator/internal/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -36,12 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
-	"github.com/clevyr/pulsetic-operator/internal/controller"
-	//+kubebuilder:scaffold:imports
 )
 
+//nolint:gochecknoglobals
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -54,7 +50,6 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-// nolint:gocyclo
 func main() {
 	var metricsAddr string
 	var metricsCertPath, metricsCertName, metricsCertKey string
@@ -81,7 +76,10 @@ func main() {
 	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
-	flag.StringVar(&controller.ClusterResourceNamespace, "cluster-resource-namespace", controller.ClusterResourceNamespace,
+	flag.StringVar(
+		&controller.ClusterResourceNamespace,
+		"cluster-resource-namespace",
+		controller.ClusterResourceNamespace,
 		"Namespace to store resources owned by cluster scoped resources",
 	)
 	flag.StringVar(&controller.IngressAnnotationPrefix, "ingress-annotation-prefix", controller.IngressAnnotationPrefix,
@@ -117,8 +115,12 @@ func main() {
 	webhookTLSOpts := tlsOpts
 
 	if len(webhookCertPath) > 0 {
-		setupLog.Info("Initializing webhook certificate watcher using provided certificates",
-			"webhook-cert-path", webhookCertPath, "webhook-cert-name", webhookCertName, "webhook-cert-key", webhookCertKey)
+		setupLog.Info(
+			"Initializing webhook certificate watcher using provided certificates",
+			"webhook-cert-path", webhookCertPath,
+			"webhook-cert-name", webhookCertName,
+			"webhook-cert-key", webhookCertKey,
+		)
 
 		var err error
 		webhookCertWatcher, err = certwatcher.New(
@@ -157,6 +159,7 @@ func main() {
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 	}
 
+	//nolint:godox
 	// If the certificate is not specified, controller-runtime will automatically
 	// generate self-signed certificates for the metrics server. While convenient for development and testing,
 	// this setup is not recommended for production.
@@ -166,8 +169,12 @@ func main() {
 	// managed by cert-manager for the metrics server.
 	// - [PROMETHEUS-WITH-CERTS] at config/prometheus/kustomization.yaml for TLS certification.
 	if len(metricsCertPath) > 0 {
-		setupLog.Info("Initializing metrics certificate watcher using provided certificates",
-			"metrics-cert-path", metricsCertPath, "metrics-cert-name", metricsCertName, "metrics-cert-key", metricsCertKey)
+		setupLog.Info(
+			"Initializing metrics certificate watcher using provided certificates",
+			"metrics-cert-path", metricsCertPath,
+			"metrics-cert-name", metricsCertName,
+			"metrics-cert-key", metricsCertKey,
+		)
 
 		var err error
 		metricsCertWatcher, err = certwatcher.New(

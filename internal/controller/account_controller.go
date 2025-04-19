@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 
+	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
 	"github.com/clevyr/pulsetic-operator/internal/pulsetic"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -30,13 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
 )
 
+//nolint:gochecknoglobals
 var ClusterResourceNamespace = "pulsetic-system"
 
-// AccountReconciler reconciles a Account object
+// AccountReconciler reconciles a Account object.
 type AccountReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -58,7 +58,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	_ = log.FromContext(ctx)
 
 	account := &pulseticv1.Account{}
-	if err := r.Client.Get(ctx, req.NamespacedName, account); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, account); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -91,7 +91,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Account{}, "spec.isDefault", func(rawObj client.Object) []string {
-		account := rawObj.(*pulseticv1.Account)
+		account := rawObj.(*pulseticv1.Account) //nolint:errcheck
 		if !account.Spec.IsDefault {
 			return nil
 		}

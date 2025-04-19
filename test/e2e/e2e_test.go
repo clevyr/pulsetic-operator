@@ -24,22 +24,21 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/clevyr/pulsetic-operator/test/utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/clevyr/pulsetic-operator/test/utils"
 )
 
-// namespace where the project is deployed in
+// namespace where the project is deployed in.
 const namespace = "pulsetic-operator-system"
 
-// serviceAccountName created for the project
+// serviceAccountName created for the project.
 const serviceAccountName = "pulsetic-operator-controller-manager"
 
-// metricsServiceName is the name of the metrics service of the project
+// metricsServiceName is the name of the metrics service of the project.
 const metricsServiceName = "pulsetic-operator-controller-manager-metrics-service"
 
-// metricsRoleBindingName is the name of the RBAC that will be created to allow get the metrics data
+// metricsRoleBindingName is the name of the RBAC that will be created to allow get the metrics data.
 const metricsRoleBindingName = "pulsetic-operator-metrics-binding"
 
 var _ = Describe("Manager", Ordered, func() {
@@ -127,9 +126,9 @@ var _ = Describe("Manager", Ordered, func() {
 			cmd = exec.Command("kubectl", "describe", "pod", controllerPodName, "-n", namespace)
 			podDescription, err := utils.Run(cmd)
 			if err == nil {
-				fmt.Println("Pod description:\n", podDescription)
+				_, _ = fmt.Fprintln(GinkgoWriter, "Pod description:\n", podDescription)
 			} else {
-				fmt.Println("Failed to describe controller pod")
+				_, _ = fmt.Fprintln(GinkgoWriter, "Failed to describe controller pod")
 			}
 		}
 	})
@@ -258,6 +257,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 		//+kubebuilder:scaffold:e2e-webhooks-checks
 
+		//nolint:godox
 		// TODO: Customize the e2e test suite with scenarios specific to your project.
 		// Consider applying sample/CR(s) and check their status and/or verifying
 		// the reconciliation by using the metrics, i.e.:

@@ -10,13 +10,13 @@ import (
 	"strings"
 )
 
-type ErrorResponse struct {
+type ResponseError struct {
 	Response *http.Response      `json:"-"`
 	Message  string              `json:"message"`
 	Errors   map[string][]string `json:"errors"`
 }
 
-func (e ErrorResponse) Error() string {
+func (e ResponseError) Error() string {
 	err := "Pulsetic API error"
 	if e.Response != nil {
 		err += " " + strconv.Itoa(e.Response.StatusCode)

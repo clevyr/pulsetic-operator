@@ -40,9 +40,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+//nolint:gochecknoglobals
 var IngressAnnotationPrefix = "pulsetic.clevyr.com/"
 
-// IngressReconciler reconciles a Ingress object
+// IngressReconciler reconciles a Ingress object.
 type IngressReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
@@ -169,9 +170,12 @@ func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *IngressReconciler) findMonitors(ctx context.Context, ingress *networkingv1.Ingress) (*pulseticv1.MonitorList, error) {
+func (r *IngressReconciler) findMonitors(
+	ctx context.Context,
+	ingress *networkingv1.Ingress,
+) (*pulseticv1.MonitorList, error) {
 	list := &pulseticv1.MonitorList{}
-	err := r.Client.List(ctx, list, &client.ListOptions{
+	err := r.List(ctx, list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector("spec.sourceRef", ingress.Kind+"/"+ingress.Name),
 	})
 	if err != nil {
@@ -205,7 +209,11 @@ func (r *IngressReconciler) getMatchingAnnotations(ingress *networkingv1.Ingress
 	return annotations
 }
 
-func (r *IngressReconciler) updateValues(ingress *networkingv1.Ingress, monitor *pulseticv1.Monitor, annotations map[string]string) error {
+func (r *IngressReconciler) updateValues(
+	ingress *networkingv1.Ingress,
+	monitor *pulseticv1.Monitor,
+	annotations map[string]string,
+) error {
 	monitor.Spec.Monitor.Name = ingress.Name
 	if _, ok := annotations["monitor.url"]; !ok {
 		if len(ingress.Spec.Rules) != 0 {
