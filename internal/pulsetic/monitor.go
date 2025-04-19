@@ -9,7 +9,7 @@ type Monitor struct {
 	URL                       string                      `json:"url"`
 	Status                    string                      `json:"status"`
 	SSLCertificateState       string                      `json:"ssl_certificate_state"`
-	SSLCheck                  int                         `json:"ssl_check"`
+	SSLCheck                  IntBool                     `json:"ssl_check"`
 	IP                        string                      `json:"ip"`
 	Latitude                  interface{}                 `json:"latitude"`
 	Longitude                 interface{}                 `json:"longitude"`
@@ -71,15 +71,15 @@ type Header struct {
 }
 
 type SSLCertificate struct {
-	ID                 int64  `json:"id"`
-	MonitorID          int64  `json:"monitor_id"`
-	Domain             string `json:"domain"`
-	IssuedBy           string `json:"issued_by"`
-	SignatureAlgorithm string `json:"signature_algorithm"`
-	IsValid            int    `json:"is_valid"`
-	ExpiresAt          string `json:"expires_at"`
-	CreatedAt          string `json:"created_at"`
-	UpdatedAt          string `json:"updated_at"`
+	ID                 int64   `json:"id"`
+	MonitorID          int64   `json:"monitor_id"`
+	Domain             string  `json:"domain"`
+	IssuedBy           string  `json:"issued_by"`
+	SignatureAlgorithm string  `json:"signature_algorithm"`
+	IsValid            IntBool `json:"is_valid"`
+	ExpiresAt          string  `json:"expires_at"`
+	CreatedAt          string  `json:"created_at"`
+	UpdatedAt          string  `json:"updated_at"`
 }
 
 type Node struct {
