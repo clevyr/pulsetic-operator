@@ -9,6 +9,7 @@ import (
 	"iter"
 	"net/http"
 	"path"
+	"reflect"
 	"strconv"
 )
 
@@ -65,9 +66,23 @@ func (m MonitorClient) List(ctx context.Context) iter.Seq2[Monitor, error] {
 		}
 		defer consumeAndClose(res.Body)
 
-		for monitor, err := range iterMonitors(res.Body) {
-			if !yield(monitor, err) {
-				cancel()
+		decoder := json.NewDecoder(res.Body)
+		if t, err := decoder.Token(); err != nil {
+			yield(Monitor{}, err)
+			return
+		} else if t != json.Delim('[') {
+			yield(Monitor{}, &json.UnmarshalTypeError{Value: "object", Type: reflect.TypeOf([]Monitor{})})
+			return
+		}
+
+		for decoder.More() {
+			var monitor Monitor
+			if err := decoder.Decode(&monitor); err != nil {
+				yield(Monitor{}, err)
+				return
+			}
+
+			if !yield(monitor, nil) {
 				return
 			}
 		}
