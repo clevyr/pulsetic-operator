@@ -48,7 +48,7 @@ type Monitor struct {
 	UnpaidChecks              int                         `json:"unpaid_checks"`
 	BilledChecks              int                         `json:"billed_checks"`
 	TelegramHash              string                      `json:"telegram_hash"`
-	CheckedAt                 string                      `json:"checked_at"`
+	CheckedAt                 UnixOrTime                  `json:"checked_at"`
 	Position                  int                         `json:"position"`
 	Disabled                  int                         `json:"disabled"`
 	StatusChangedAt           string                      `json:"status_changed_at"`
@@ -71,15 +71,15 @@ type Header struct {
 }
 
 type SSLCertificate struct {
-	ID                 int64   `json:"id"`
-	MonitorID          int64   `json:"monitor_id"`
-	Domain             string  `json:"domain"`
-	IssuedBy           string  `json:"issued_by"`
-	SignatureAlgorithm string  `json:"signature_algorithm"`
-	IsValid            IntBool `json:"is_valid"`
-	ExpiresAt          string  `json:"expires_at"`
-	CreatedAt          string  `json:"created_at"`
-	UpdatedAt          string  `json:"updated_at"`
+	ID                 int64      `json:"id"`
+	MonitorID          int64      `json:"monitor_id"`
+	Domain             string     `json:"domain"`
+	IssuedBy           string     `json:"issued_by"`
+	SignatureAlgorithm string     `json:"signature_algorithm"`
+	IsValid            IntBool    `json:"is_valid"`
+	ExpiresAt          UnixOrTime `json:"expires_at"`
+	CreatedAt          string     `json:"created_at"`
+	UpdatedAt          string     `json:"updated_at"`
 }
 
 type Node struct {
