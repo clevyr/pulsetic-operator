@@ -9,7 +9,7 @@ type MonitorEditParams struct {
 	Name                     string   `json:"name,omitzero"`
 	UptimeCheckFrequency     int      `json:"uptime_check_frequency,string,omitzero"`
 	OfflineNotificationDelay int      `json:"offline_notification_delay,string,omitzero"`
-	SSLCheck                 bool     `json:"ssl_check,omitzero"`
+	SSLCheck                 IntBool  `json:"ssl_check,omitzero"`
 	Request                  Request  `json:"request,omitzero"`
 	Response                 Response `json:"response,omitzero"`
 }
@@ -35,7 +35,7 @@ func (m Monitor) EditParams() MonitorEditParams {
 		Name:                     m.Name,
 		UptimeCheckFrequency:     m.UptimeCheckFrequency,
 		OfflineNotificationDelay: m.OfflineNotificationDelay,
-		SSLCheck:                 m.SSLCheck == 1,
+		SSLCheck:                 m.SSLCheck,
 		Request: Request{
 			Type:           strings.ToLower(m.RequestType.String()),
 			BodyType:       m.RequestBodyType,
