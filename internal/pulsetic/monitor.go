@@ -1,6 +1,8 @@
 package pulsetic
 
-import "github.com/clevyr/pulsetic-operator/internal/pulsetic/pulsetictypes"
+import (
+	"github.com/clevyr/pulsetic-operator/internal/pulsetic/pulsetictypes"
+)
 
 type Monitor struct {
 	ID                        int64                       `json:"id"`
@@ -11,8 +13,8 @@ type Monitor struct {
 	SSLCertificateState       string                      `json:"ssl_certificate_state"`
 	SSLCheck                  IntBool                     `json:"ssl_check"`
 	IP                        string                      `json:"ip"`
-	Latitude                  interface{}                 `json:"latitude"`
-	Longitude                 interface{}                 `json:"longitude"`
+	Latitude                  float64                     `json:"latitude"`
+	Longitude                 float64                     `json:"longitude"`
 	IsRunning                 bool                        `json:"is_running"`
 	IsNegative                int                         `json:"is_negative"`
 	UptimeCheckFrequency      int                         `json:"uptime_check_frequency"`
@@ -31,7 +33,7 @@ type Monitor struct {
 	ResponseHeaders           []Header                    `json:"response_headers"`
 	ResponseExpectedCode      string                      `json:"response_expected_code"`
 	SnapshotsAverageUptime    string                      `json:"snapshots_average_uptime"`
-	Uptime                    string                      `json:"uptime"`
+	Uptime                    float64                     `json:"uptime"`
 	ResponseTime              float64                     `json:"response_time"`
 	LighthouseAuditEnabled    bool                        `json:"lighthouse_audit_enabled"`
 	MobilePerformanceScore    string                      `json:"mobile_performance_score"`
