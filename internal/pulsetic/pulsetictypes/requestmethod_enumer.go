@@ -15,8 +15,9 @@ var _RequestMethodIndex = [...]uint8{0, 3, 7, 10, 15, 21, 25, 32}
 const _RequestMethodLowerName = "getpostputpatchdeleteheadoptions"
 
 func (i RequestMethod) String() string {
+	i -= 1
 	if i >= RequestMethod(len(_RequestMethodIndex)-1) {
-		return fmt.Sprintf("RequestMethod(%d)", i)
+		return fmt.Sprintf("RequestMethod(%d)", i+1)
 	}
 	return _RequestMethodName[_RequestMethodIndex[i]:_RequestMethodIndex[i+1]]
 }
@@ -25,13 +26,13 @@ func (i RequestMethod) String() string {
 // Re-run the stringer command to generate them again.
 func _RequestMethodNoOp() {
 	var x [1]struct{}
-	_ = x[MethodGET-(0)]
-	_ = x[MethodPOST-(1)]
-	_ = x[MethodPUT-(2)]
-	_ = x[MethodPATCH-(3)]
-	_ = x[MethodDELETE-(4)]
-	_ = x[MethodHEAD-(5)]
-	_ = x[MethodOPTIONS-(6)]
+	_ = x[MethodGET-(1)]
+	_ = x[MethodPOST-(2)]
+	_ = x[MethodPUT-(3)]
+	_ = x[MethodPATCH-(4)]
+	_ = x[MethodDELETE-(5)]
+	_ = x[MethodHEAD-(6)]
+	_ = x[MethodOPTIONS-(7)]
 }
 
 var _RequestMethodValues = []RequestMethod{MethodGET, MethodPOST, MethodPUT, MethodPATCH, MethodDELETE, MethodHEAD, MethodOPTIONS}
