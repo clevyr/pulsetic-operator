@@ -94,8 +94,45 @@ func (m MonitorClient) Get(ctx context.Context, opts ...FindOption) (Monitor, er
 	for _, opt := range opts {
 		opt(&findBy)
 	}
+
+	if findBy.ID != nil && *findBy.ID != 0 {
+		if m, err := m.FindByID(ctx, *findBy.ID); err == nil {
+			return m, nil
+		}
+	}
+
+	if findBy.URL != nil && *findBy.URL != "" {
+		for monitor, err := range m.List(ctx) {
+			if err != nil || monitor.URL == *findBy.URL {
+				return monitor, err
+			}
+		}
+	}
+
+	return Monitor{}, ErrMonitorNotFound
+}
+
+func (m MonitorClient) FindByID(ctx context.Context, id int64) (Monitor, error) {
+	u := path.Join(endpointMonitors, strconv.FormatInt(id, 10))
+
+	res, err := m.client.Do(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return Monitor{}, err
+	}
+	defer consumeAndClose(res.Body)
+
+	var parsed UpdateResponse
+	err = json.NewDecoder(res.Body).Decode(&parsed)
+
+	if parsed.Data.ID == 0 {
+		return Monitor{}, ErrMonitorNotFound
+	}
+	return parsed.Data, err
+}
+
+func (m MonitorClient) FindByURL(ctx context.Context, url string) (Monitor, error) {
 	for monitor, err := range m.List(ctx) {
-		if err != nil || findBy.Matches(monitor) {
+		if err != nil || monitor.URL == url {
 			return monitor, err
 		}
 	}
