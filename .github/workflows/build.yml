@@ -109,7 +109,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - name: Setup Flux CLI
-        uses: fluxcd/flux2/action@v2.6.2
+        uses: fluxcd/flux2/action@bda4c8187e436462be0d072e728b67afa215c593 # v2.6.3
       - name: Generate Installer
         run: make build-installer IMG=ghcr.io/clevyr/pulsetic-operator:${{ github.ref_name }}@${{ needs.build.outputs.digest }}
       - name: Publish
