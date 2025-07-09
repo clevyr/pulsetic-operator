@@ -1,6 +1,6 @@
 module github.com/clevyr/pulsetic-operator
 
-go 1.24.2
+go 1.24.5
 
 require (
 	github.com/go-viper/mapstructure/v2 v2.2.1
