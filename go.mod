@@ -3,7 +3,7 @@ module github.com/clevyr/pulsetic-operator
 go 1.24.2
 
 require (
-	github.com/go-viper/mapstructure/v2 v2.3.0
+	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/knadh/koanf/maps v0.1.2
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
