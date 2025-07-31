@@ -9,7 +9,6 @@ import (
 	"iter"
 	"net/http"
 	"path"
-	"reflect"
 	"strconv"
 )
 
@@ -54,39 +53,52 @@ func (m MonitorClient) Create(ctx context.Context, monitor Monitor) (Monitor, er
 	return m.Update(ctx, monitor.ID, monitor)
 }
 
+type ListResponse struct {
+	CurrentPage int       `json:"current_page"`
+	LastPage    int       `json:"last_page"`
+	Data        []Monitor `json:"data"`
+}
+
 func (m MonitorClient) List(ctx context.Context) iter.Seq2[Monitor, error] {
 	return func(yield func(Monitor, error) bool) {
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		res, err := m.client.Do(ctx, http.MethodGet, endpointMonitors, nil)
-		if err != nil {
-			yield(Monitor{}, err)
-			return
-		}
-		defer consumeAndClose(res.Body)
-
-		decoder := json.NewDecoder(res.Body)
-		if t, err := decoder.Token(); err != nil {
-			yield(Monitor{}, err)
-			return
-		} else if t != json.Delim('[') {
-			yield(Monitor{}, &json.UnmarshalTypeError{Value: "object", Type: reflect.TypeOf([]Monitor{})})
-			return
-		}
-
-		for decoder.More() {
-			var monitor Monitor
-			if err := decoder.Decode(&monitor); err != nil {
+		page := 1
+		for {
+			res, err := m.ListPage(ctx, page)
+			if err != nil {
 				yield(Monitor{}, err)
 				return
 			}
 
-			if !yield(monitor, nil) {
-				return
+			for _, monitor := range res.Data {
+				if !yield(monitor, nil) {
+					return
+				}
 			}
+
+			if page >= res.LastPage {
+				break
+			}
+			page++
 		}
 	}
+}
+
+func (m MonitorClient) ListPage(ctx context.Context, page int) (*ListResponse, error) {
+	u := endpointMonitors + "?page=" + strconv.Itoa(page)
+
+	res, err := m.client.Do(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer consumeAndClose(res.Body)
+
+	decoder := json.NewDecoder(res.Body)
+
+	var data ListResponse
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+	return &data, nil
 }
 
 func (m MonitorClient) Get(ctx context.Context, opts ...FindOption) (Monitor, error) {
