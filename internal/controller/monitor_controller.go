@@ -19,10 +19,13 @@ package controller
 import (
 	"context"
 	"errors"
+	"strconv"
+	"time"
 
 	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
 	"github.com/clevyr/pulsetic-operator/internal/pulsetic"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +37,14 @@ import (
 // MonitorReconciler reconciles a Monitor object.
 type MonitorReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=pulsetic.clevyr.com,resources=monitors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pulsetic.clevyr.com,resources=monitors/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pulsetic.clevyr.com,resources=monitors/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,6 +52,7 @@ type MonitorReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile
 func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	start := time.Now()
 	_ = log.FromContext(ctx)
 
 	monitor := &pulseticv1.Monitor{}
@@ -56,11 +62,14 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	account := &pulseticv1.Account{}
 	if err := GetAccount(ctx, r.Client, account, monitor.Spec.Account.Name); err != nil {
+		r.Recorder.Event(monitor, "Warning", "GetAccountFailed", err.Error())
 		return ctrl.Result{}, err
 	}
 
 	apiKey, err := GetAPIKey(ctx, r.Client, account)
 	if err != nil {
+		r.Recorder.Event(monitor, "Warning", "GetAPIKeyFailed", err.Error())
+		r.Recorder.Event(account, "Warning", "GetAPIKeyFailed", err.Error())
 		return ctrl.Result{}, err
 	}
 	psclient := pulsetic.NewClient(apiKey)
@@ -71,12 +80,18 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if controllerutil.ContainsFinalizer(monitor, myFinalizerName) {
 			if monitor.Spec.Prune && monitor.Status.Ready {
 				if err := psclient.Monitors().Delete(ctx, monitor.Status.ID); err != nil {
+					r.Recorder.Event(monitor, "Warning", "DeleteMonitorFailed", err.Error())
 					return ctrl.Result{}, err
 				}
+
+				r.Recorder.Event(monitor, "Normal", "DeleteMonitorSucceeded",
+					"Deleted monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String(),
+				)
 			}
 
 			controllerutil.RemoveFinalizer(monitor, myFinalizerName)
 			if err := r.Update(ctx, monitor); err != nil {
+				r.Recorder.Event(monitor, "Warning", "RemoveFinalizerFailed", err.Error())
 				return ctrl.Result{}, err
 			}
 		}
@@ -87,30 +102,42 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	psmonitor, err := tryFindMonitor(ctx, psclient, monitor.Status.ID, monitor.Spec.Monitor.URL)
 	if err != nil {
 		if !errors.Is(err, pulsetic.ErrMonitorNotFound) {
+			r.Recorder.Event(monitor, "Warning", "FindMonitorFailed", err.Error())
 			return ctrl.Result{}, err
 		}
 
 		psmonitor, err = psclient.Monitors().Create(ctx, monitor.Spec.Monitor.ToMonitor())
 		if err != nil {
+			r.Recorder.Event(monitor, "Warning", "CreateMonitorFailed", err.Error())
 			return ctrl.Result{}, err
 		}
+		r.Recorder.Event(monitor, "Normal",
+			"CreateMonitorSucceeded",
+			"Created monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String()+
+				", next run in "+monitor.Spec.Interval.Duration.String(),
+		)
 	} else {
 		psmonitor, err = psclient.Monitors().Update(ctx, psmonitor.ID, monitor.Spec.Monitor.ToMonitor())
 		if err != nil {
+			r.Recorder.Event(monitor, "Warning", "UpdateMonitorFailed", err.Error())
 			return ctrl.Result{}, err
 		}
+
+		r.Recorder.Event(monitor, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String()+", next run in "+monitor.Spec.Interval.Duration.String())
 	}
 
 	monitor.Status.Ready = true
 	monitor.Status.ID = psmonitor.ID
 	monitor.Status.Running = psmonitor.IsRunning
 	if err := r.Status().Update(ctx, monitor); err != nil {
+		r.Recorder.Event(monitor, "Warning", "UpdateStatusFailed", err.Error())
 		return ctrl.Result{}, err
 	}
 
 	if !controllerutil.ContainsFinalizer(monitor, myFinalizerName) {
 		controllerutil.AddFinalizer(monitor, myFinalizerName)
 		if err := r.Update(ctx, monitor); err != nil {
+			r.Recorder.Event(monitor, "Warning", "AddFinalizerFailed", err.Error())
 			return ctrl.Result{}, err
 		}
 	}

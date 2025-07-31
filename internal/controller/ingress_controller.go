@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
 	"github.com/clevyr/pulsetic-operator/internal/util"
@@ -43,6 +44,8 @@ import (
 //nolint:gochecknoglobals
 var IngressAnnotationPrefix = "pulsetic.clevyr.com/"
 
+const EnabledAnnotation = "enabled"
+
 // IngressReconciler reconciles a Ingress object.
 type IngressReconciler struct {
 	client.Client
@@ -61,6 +64,7 @@ type IngressReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile
 func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	start := time.Now()
 	_ = log.FromContext(ctx)
 
 	ingress := &networkingv1.Ingress{}
@@ -70,6 +74,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	list, err := r.findMonitors(ctx, ingress)
 	if err != nil {
+		r.Recorder.Event(ingress, "Warning", "FindMonitorFailed", err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -79,12 +84,14 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if controllerutil.ContainsFinalizer(ingress, myFinalizerName) {
 			for _, monitor := range list.Items {
 				if err := r.Delete(ctx, &monitor); err != nil {
+					r.Recorder.Event(ingress, "Warning", "DeleteMonitorFailed", err.Error())
 					return ctrl.Result{}, err
 				}
 			}
 
 			controllerutil.RemoveFinalizer(ingress, myFinalizerName)
 			if err := r.Update(ctx, ingress); err != nil {
+				r.Recorder.Event(ingress, "Warning", "RemoveFinalizerFailed", err.Error())
 				return ctrl.Result{}, err
 			}
 		}
@@ -95,8 +102,11 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	annotations := r.getMatchingAnnotations(ingress)
 
 	var enabled bool
-	if val, ok := annotations["enabled"]; ok {
+	if val, ok := annotations[EnabledAnnotation]; ok {
 		if enabled, err = strconv.ParseBool(val); err != nil {
+			r.Recorder.Event(ingress, "Warning", "ParseAnnotationFailed",
+				"Parsing annotation "+strconv.Quote(IngressAnnotationPrefix+EnabledAnnotation)+": "+err.Error(),
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -107,12 +117,18 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Delete existing Monitor
 			for _, monitor := range list.Items {
 				if err := r.Delete(ctx, &monitor); err != nil {
+					r.Recorder.Event(ingress, "Warning", "DeleteMonitorFailed", err.Error())
 					return ctrl.Result{}, err
 				}
+
+				r.Recorder.Event(ingress, "Normal", "DeleteMonitorSucceeded",
+					"Deleted monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String(),
+				)
 			}
 
 			controllerutil.RemoveFinalizer(ingress, myFinalizerName)
 			if err := r.Update(ctx, ingress); err != nil {
+				r.Recorder.Event(ingress, "Warning", "RemoveFinalizerFailed", err.Error())
 				return ctrl.Result{}, err
 			}
 		}
@@ -136,24 +152,31 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	for _, monitor := range list.Items {
 		if err := r.updateValues(ingress, &monitor, annotations); err != nil {
-			r.Recorder.Event(ingress, "Warning", "Sync", err.Error())
+			r.Recorder.Event(ingress, "Warning", "ParseAnnotationFailed", err.Error())
 			return ctrl.Result{}, err
 		}
 
 		if create {
 			if err := r.Create(ctx, &monitor); err != nil {
+				r.Recorder.Event(ingress, "Warning", "CreateMonitorFailed", err.Error())
 				return ctrl.Result{}, err
 			}
+			r.Recorder.Event(ingress, "Normal", "CreateMonitorSucceeded",
+				"Created monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String(),
+			)
 		} else {
 			if err := r.Update(ctx, &monitor); err != nil {
+				r.Recorder.Event(ingress, "Warning", "UpdateMonitorFailed", err.Error())
 				return ctrl.Result{}, err
 			}
+			r.Recorder.Event(ingress, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String())
 		}
 	}
 
 	if !controllerutil.ContainsFinalizer(ingress, myFinalizerName) {
 		controllerutil.AddFinalizer(ingress, myFinalizerName)
 		if err := r.Update(ctx, ingress); err != nil {
+			r.Recorder.Event(ingress, "Warning", "AddFinalizerFailed", err.Error())
 			return ctrl.Result{}, err
 		}
 	}
@@ -237,7 +260,7 @@ func (r *IngressReconciler) updateValues(
 			monitor.Spec.Monitor.URL = u.String()
 		}
 	}
-	delete(annotations, "enabled")
+	delete(annotations, EnabledAnnotation)
 	delete(annotations, "monitor.url")
 	delete(annotations, "monitor.scheme")
 	delete(annotations, "monitor.host")
