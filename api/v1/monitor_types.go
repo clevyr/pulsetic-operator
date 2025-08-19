@@ -33,6 +33,10 @@ type MonitorSpec struct {
 	//+kubebuilder:default:=true
 	Prune bool `json:"prune,omitempty"`
 
+	// Suspend pauses reconciliation of this resource.
+	//+optional
+	Suspend bool `json:"suspend,omitempty"`
+
 	// Account references this object's Account. If not specified, the default will be used.
 	Account corev1.LocalObjectReference `json:"account,omitempty"`
 

@@ -60,6 +60,10 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if monitor.Spec.Suspend {
+		return ctrl.Result{}, nil
+	}
+
 	account := &pulseticv1.Account{}
 	if err := GetAccount(ctx, r.Client, account, monitor.Spec.Account.Name); err != nil {
 		r.Recorder.Event(monitor, "Warning", "GetAccountFailed", err.Error())

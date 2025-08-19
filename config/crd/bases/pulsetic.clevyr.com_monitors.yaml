@@ -151,6 +151,9 @@ spec:
                 - name
                 type: object
                 x-kubernetes-map-type: atomic
+              suspend:
+                description: Suspend pauses reconciliation of this resource.
+                type: boolean
             required:
             - monitor
             type: object
