@@ -91,7 +91,7 @@ type MonitorValues struct {
 
 	// OfflineNotificationDelay waits to notify until the site has been down for a time.
 	//+kubebuilder:default:="1m"
-	OfflineNotificationDelay *metav1.Duration `json:"offline_notification_delay,omitempty"`
+	OfflineNotificationDelay *metav1.Duration `json:"offlineNotificationDelay,omitempty"`
 }
 
 func (m *MonitorValues) ToMonitor() pulsetic.Monitor {

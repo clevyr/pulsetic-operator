@@ -96,7 +96,7 @@ spec:
                   name:
                     description: Name sets the name shown in Pulsetic.
                     type: string
-                  offline_notification_delay:
+                  offlineNotificationDelay:
                     default: 1m
                     description: OfflineNotificationDelay waits to notify until the
                       site has been down for a time.
