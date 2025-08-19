@@ -19,6 +19,7 @@ package v1
 import (
 	"github.com/clevyr/pulsetic-operator/internal/pulsetic"
 	"github.com/clevyr/pulsetic-operator/internal/pulsetic/pulsetictypes"
+	"github.com/clevyr/pulsetic-operator/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -44,6 +45,7 @@ type MonitorSpec struct {
 	Monitor MonitorValues `json:"monitor"`
 
 	// SourceRef optionally references the object that created this Monitor.
+	//+optional
 	SourceRef *corev1.TypedLocalObjectReference `json:"sourceRef,omitempty"`
 }
 
@@ -82,46 +84,63 @@ type MonitorValues struct {
 	URL string `json:"url"`
 
 	// Type chooses the monitor type.
-	//+kubebuilder:default:=HTTP
-	Type pulsetictypes.RequestType `json:"type,omitempty"`
+	Type *pulsetictypes.RequestType `json:"type,omitempty"`
 
+	MonitorDefaults `json:",inline"`
+}
+
+type MonitorDefaults struct {
 	// Interval is the monitoring interval.
-	//+kubebuilder:default:="1m"
+	//+optional
 	Interval *metav1.Duration `json:"interval,omitempty"`
 
 	// Method defines the HTTP verb to use.
-	//+kubebuilder:default:=HEAD
-	Method pulsetictypes.RequestMethod `json:"method,omitempty"`
+	//+optional
+	Method *pulsetictypes.RequestMethod `json:"method,omitempty"`
 
 	// Timeout is the maximum amount of time that a request can take before the check is considered down.
-	//+kubebuilder:default:="10s"
+	//+optional
 	//+kubebuilder:validation:XValidation:rule="duration(self) >= duration('500ms')",message="timeout must be >= 0.5s"
 	//+kubebuilder:validation:XValidation:rule="duration(self) <= duration('30s')",message="timeout must be <= 30s"
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 
 	// OfflineNotificationDelay waits to notify until the site has been down for a time.
-	//+kubebuilder:default:="1m"
+	//+optional
 	OfflineNotificationDelay *metav1.Duration `json:"offlineNotificationDelay,omitempty"`
 }
 
-func (m *MonitorValues) ToMonitor() pulsetic.Monitor {
-	return pulsetic.Monitor{
-		Name:                     m.Name,
-		URL:                      m.URL,
-		RequestType:              m.Type,
-		UptimeCheckFrequency:     int(m.Interval.Seconds() + 0.5),
-		RequestMethod:            m.Method,
-		RequestTimeout:           m.Timeout.Seconds(),
-		OfflineNotificationDelay: int(m.OfflineNotificationDelay.Minutes() + 0.5),
+func (m MonitorValues) ToMonitor(defaults *MonitorDefaults) pulsetic.Monitor {
+	if defaults == nil {
+		defaults = &MonitorDefaults{}
 	}
+	v := pulsetic.Monitor{
+		Name: m.Name,
+		URL:  m.URL,
+	}
+	if m.Type != nil {
+		v.RequestType = *m.Type
+	}
+	if interval := util.FirstValue(m.Interval, defaults.Interval); interval != nil {
+		v.UptimeCheckFrequency = int(interval.Seconds() + 0.5)
+	}
+	if method := util.FirstValue(m.Method, defaults.Method); method != nil {
+		v.RequestMethod = *method
+	}
+	if timeout := util.FirstValue(m.Timeout, defaults.Timeout); timeout != nil {
+		v.RequestTimeout = timeout.Seconds()
+	}
+	if offlineDelay := util.FirstValue(m.OfflineNotificationDelay, defaults.OfflineNotificationDelay); offlineDelay != nil {
+		v.OfflineNotificationDelay = int(offlineDelay.Minutes() + 0.5)
+	}
+	return v
 }
 
 //+kubebuilder:object:root=true
 
 // MonitorList contains a list of Monitor.
 type MonitorList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `          json:",inline"`
+	metav1.ListMeta `          json:"metadata,omitempty"`
 	Items           []Monitor `json:"items"`
 }
 

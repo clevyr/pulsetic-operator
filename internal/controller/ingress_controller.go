@@ -274,6 +274,8 @@ func (r *IngressReconciler) updateValues(
 		ErrorUnused:      true,
 		WeaklyTypedInput: true,
 		Result:           &monitor.Spec,
+		TagName:          "json",
+		SquashTagOption:  "inline",
 	})
 	if err != nil {
 		return err

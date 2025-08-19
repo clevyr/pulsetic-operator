@@ -110,7 +110,7 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, err
 		}
 
-		psmonitor, err = psclient.Monitors().Create(ctx, monitor.Spec.Monitor.ToMonitor())
+		psmonitor, err = psclient.Monitors().Create(ctx, monitor.Spec.Monitor.ToMonitor(account.Spec.MonitorDefaults))
 		if err != nil {
 			r.Recorder.Event(monitor, "Warning", "CreateMonitorFailed", err.Error())
 			return ctrl.Result{}, err
@@ -121,7 +121,7 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				", next run in "+monitor.Spec.Interval.Duration.String(),
 		)
 	} else {
-		psmonitor, err = psclient.Monitors().Update(ctx, psmonitor.ID, monitor.Spec.Monitor.ToMonitor())
+		psmonitor, err = psclient.Monitors().Update(ctx, psmonitor.ID, monitor.Spec.Monitor.ToMonitor(account.Spec.MonitorDefaults))
 		if err != nil {
 			r.Recorder.Event(monitor, "Warning", "UpdateMonitorFailed", err.Error())
 			return ctrl.Result{}, err

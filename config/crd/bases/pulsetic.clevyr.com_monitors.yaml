@@ -78,11 +78,9 @@ spec:
                 description: Monitor configures the Pulsetic monitor.
                 properties:
                   interval:
-                    default: 1m
                     description: Interval is the monitoring interval.
                     type: string
                   method:
-                    default: HEAD
                     description: Method defines the HTTP verb to use.
                     enum:
                     - GET
@@ -97,12 +95,10 @@ spec:
                     description: Name sets the name shown in Pulsetic.
                     type: string
                   offlineNotificationDelay:
-                    default: 1m
                     description: OfflineNotificationDelay waits to notify until the
                       site has been down for a time.
                     type: string
                   timeout:
-                    default: 10s
                     description: Timeout is the maximum amount of time that a request
                       can take before the check is considered down.
                     type: string
@@ -112,7 +108,6 @@ spec:
                     - message: timeout must be <= 30s
                       rule: duration(self) <= duration('30s')
                   type:
-                    default: HTTP
                     description: Type chooses the monitor type.
                     enum:
                     - HTTP

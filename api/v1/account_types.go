@@ -28,6 +28,10 @@ type AccountSpec struct {
 
 	// APIKeySecretRef references the secret that contains the Pulsetic API key.
 	APIKeySecretRef corev1.SecretKeySelector `json:"apiKeySecretRef"`
+
+	// MonitorDefaults sets default values for monitors in this account.
+	//+optional
+	MonitorDefaults *MonitorDefaults `json:"monitorDefaults,omitzero"`
 }
 
 // AccountStatus defines the observed state of Account.
