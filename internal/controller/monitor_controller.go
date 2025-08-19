@@ -130,6 +130,14 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.Recorder.Event(monitor, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String()+", next run in "+monitor.Spec.Interval.Duration.String())
 	}
 
+	if monitor.Spec.Account.Name == "" {
+		monitor.Spec.Account.Name = account.Name
+		if err := r.Update(ctx, monitor); err != nil {
+			r.Recorder.Event(monitor, "Warning", "UpdateMonitorFailed", err.Error())
+			return ctrl.Result{}, err
+		}
+	}
+
 	monitor.Status.Ready = true
 	monitor.Status.ID = psmonitor.ID
 	monitor.Status.Running = psmonitor.IsRunning
