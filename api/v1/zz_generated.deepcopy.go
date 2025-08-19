@@ -225,6 +225,11 @@ func (in *MonitorValues) DeepCopyInto(out *MonitorValues) {
 		*out = new(metav1.Duration)
 		**out = **in
 	}
+	if in.Timeout != nil {
+		in, out := &in.Timeout, &out.Timeout
+		*out = new(metav1.Duration)
+		**out = **in
+	}
 	if in.OfflineNotificationDelay != nil {
 		in, out := &in.OfflineNotificationDelay, &out.OfflineNotificationDelay
 		*out = new(metav1.Duration)

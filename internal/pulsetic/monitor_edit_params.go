@@ -22,6 +22,7 @@ type Request struct {
 	BodyFormParams []FormParam `json:"body_form_params,omitzero"`
 	Method         string      `json:"method,omitzero"`
 	Headers        []Header    `json:"headers,omitzero"`
+	Timeout        float64     `json:"timeout,omitzero"`
 }
 
 type Response struct {
@@ -44,6 +45,7 @@ func (m Monitor) EditParams() MonitorEditParams {
 			BodyFormParams: m.RequestBodyFormParams,
 			Method:         strings.ToLower(m.RequestMethod.String()),
 			Headers:        m.RequestHeaders,
+			Timeout:        m.RequestTimeout,
 		},
 		Response: Response{
 			Body:    m.ResponseBody,

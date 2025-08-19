@@ -89,6 +89,12 @@ type MonitorValues struct {
 	//+kubebuilder:default:=HEAD
 	Method pulsetictypes.RequestMethod `json:"method,omitempty"`
 
+	// Timeout is the maximum amount of time that a request can take before the check is considered down.
+	//+kubebuilder:default:="10s"
+	//+kubebuilder:validation:XValidation:rule="duration(self) >= duration('500ms')",message="timeout must be >= 0.5s"
+	//+kubebuilder:validation:XValidation:rule="duration(self) <= duration('30s')",message="timeout must be <= 30s"
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
+
 	// OfflineNotificationDelay waits to notify until the site has been down for a time.
 	//+kubebuilder:default:="1m"
 	OfflineNotificationDelay *metav1.Duration `json:"offlineNotificationDelay,omitempty"`
@@ -101,6 +107,7 @@ func (m *MonitorValues) ToMonitor() pulsetic.Monitor {
 		RequestType:              m.Type,
 		UptimeCheckFrequency:     int(m.Interval.Seconds() + 0.5),
 		RequestMethod:            m.Method,
+		RequestTimeout:           m.Timeout.Seconds(),
 		OfflineNotificationDelay: int(m.OfflineNotificationDelay.Minutes() + 0.5),
 	}
 }

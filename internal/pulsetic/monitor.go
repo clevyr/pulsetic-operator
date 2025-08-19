@@ -27,7 +27,7 @@ type Monitor struct {
 	RequestBodyJSON           string                      `json:"request_body_json"`
 	RequestBodyFormParams     []FormParam                 `json:"request_body_form_params"`
 	RequestHeaders            []Header                    `json:"request_headers"`
-	RequestTimeout            int                         `json:"request_timeout"`
+	RequestTimeout            float64                     `json:"request_timeout"`
 	ResponseBody              string                      `json:"response_body"`
 	ResponseCode              string                      `json:"response_code"`
 	ResponseHeaders           []Header                    `json:"response_headers"`
