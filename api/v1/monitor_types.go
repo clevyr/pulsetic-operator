@@ -43,10 +43,6 @@ type MonitorSpec struct {
 
 	// Monitor configures the Pulsetic monitor.
 	Monitor MonitorValues `json:"monitor"`
-
-	// SourceRef optionally references the object that created this Monitor.
-	//+optional
-	SourceRef *corev1.TypedLocalObjectReference `json:"sourceRef,omitempty"`
 }
 
 // MonitorStatus defines the observed state of Monitor.
@@ -54,6 +50,8 @@ type MonitorStatus struct {
 	Ready   bool  `json:"ready"`
 	ID      int64 `json:"id,omitempty"`
 	Running bool  `json:"running,omitempty"`
+	// SourceRef references the object that created this Monitor.
+	SourceRef *corev1.TypedLocalObjectReference `json:"sourceRef,omitempty"`
 }
 
 //+kubebuilder:object:root=true

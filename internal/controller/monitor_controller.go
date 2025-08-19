@@ -153,10 +153,10 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Monitor{}, "spec.sourceRef", func(rawObj client.Object) []string {
 		monitor := rawObj.(*pulseticv1.Monitor) //nolint:errcheck
-		if monitor.Spec.SourceRef == nil {
+		if monitor.Status.SourceRef == nil {
 			return nil
 		}
-		return []string{monitor.Spec.SourceRef.Kind + "/" + monitor.Spec.SourceRef.Name}
+		return []string{monitor.Status.SourceRef.Kind + "/" + monitor.Status.SourceRef.Name}
 	}); err != nil {
 		return err
 	}

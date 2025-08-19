@@ -125,9 +125,24 @@ spec:
                 default: true
                 description: Prune enables garbage collection.
                 type: boolean
+              suspend:
+                description: Suspend pauses reconciliation of this resource.
+                type: boolean
+            required:
+            - monitor
+            type: object
+          status:
+            description: MonitorStatus defines the observed state of Monitor.
+            properties:
+              id:
+                format: int64
+                type: integer
+              ready:
+                type: boolean
+              running:
+                type: boolean
               sourceRef:
-                description: SourceRef optionally references the object that created
-                  this Monitor.
+                description: SourceRef references the object that created this Monitor.
                 properties:
                   apiGroup:
                     description: |-
@@ -146,22 +161,6 @@ spec:
                 - name
                 type: object
                 x-kubernetes-map-type: atomic
-              suspend:
-                description: Suspend pauses reconciliation of this resource.
-                type: boolean
-            required:
-            - monitor
-            type: object
-          status:
-            description: MonitorStatus defines the observed state of Monitor.
-            properties:
-              id:
-                format: int64
-                type: integer
-              ready:
-                type: boolean
-              running:
-                type: boolean
             required:
             - ready
             type: object

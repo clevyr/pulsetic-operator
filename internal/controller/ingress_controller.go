@@ -141,12 +141,6 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				Name:      ingress.Name,
 				Namespace: req.Namespace,
 			},
-			Spec: pulseticv1.MonitorSpec{
-				SourceRef: &corev1.TypedLocalObjectReference{
-					Kind: ingress.Kind,
-					Name: ingress.Name,
-				},
-			},
 		})
 	}
 
@@ -170,6 +164,16 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, err
 			}
 			r.Recorder.Event(ingress, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String())
+		}
+
+		monitor.Status.SourceRef = &corev1.TypedLocalObjectReference{
+			Kind: ingress.Kind,
+			Name: ingress.Name,
+		}
+
+		if err := r.Status().Update(ctx, &monitor); err != nil {
+			r.Recorder.Event(ingress, "Warning", "UpdateMonitorStatusFailed", err.Error())
+			return ctrl.Result{}, err
 		}
 	}
 
