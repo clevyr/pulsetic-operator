@@ -16,17 +16,23 @@ type ResponseError struct {
 }
 
 func (e ResponseError) Error() string {
-	err := "Pulsetic API error"
+	var buf strings.Builder
+	buf.WriteString("Pulsetic API error")
 	if e.Response != nil {
-		err += " " + strconv.Itoa(e.Response.StatusCode)
+		buf.WriteByte(' ')
+		buf.WriteString(strconv.Itoa(e.Response.StatusCode))
 	}
 	if e.Message != "" {
-		err += ": " + e.Message
+		buf.WriteString(": ")
+		buf.WriteString(e.Message)
 	}
 	for k, v := range e.Errors {
-		err += "\n" + k + ": " + strings.Join(v, " ")
+		buf.WriteByte('\n')
+		buf.WriteString(k)
+		buf.WriteString(": ")
+		buf.WriteString(strings.Join(v, ", "))
 	}
-	return err
+	return buf.String()
 }
 
 func consumeAndClose(r io.ReadCloser) {
