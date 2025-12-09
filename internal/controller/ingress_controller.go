@@ -19,32 +19,16 @@ package controller
 import (
 	"context"
 	"net/url"
-	"strconv"
-	"strings"
-	"time"
 
-	pulseticv1 "github.com/clevyr/pulsetic-operator/api/v1"
-	"github.com/clevyr/pulsetic-operator/internal/util"
-	"github.com/go-viper/mapstructure/v2"
-	"github.com/knadh/koanf/maps"
-	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
-
-//nolint:gochecknoglobals
-var IngressAnnotationPrefix = "pulsetic.clevyr.com/"
-
-const EnabledAnnotation = "enabled"
 
 // IngressReconciler reconciles a Ingress object.
 type IngressReconciler struct {
@@ -60,11 +44,7 @@ type IngressReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile
 func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	start := time.Now()
 	_ = log.FromContext(ctx)
 
 	ingress := &networkingv1.Ingress{}
@@ -72,118 +52,15 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	list, err := r.findMonitors(ctx, ingress)
-	if err != nil {
-		r.Recorder.Event(ingress, "Warning", "FindMonitorFailed", err.Error())
+	sr := &SourceReconciler{
+		Client:   r.Client,
+		Recorder: r.Recorder,
+	}
+
+	if err := sr.ReconcileSource(ctx, ingress, "Ingress", r.getIngressValues); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	const myFinalizerName = "pulsetic.clevyr.com/finalizer"
-	if !ingress.DeletionTimestamp.IsZero() {
-		// Object is being deleted
-		if controllerutil.ContainsFinalizer(ingress, myFinalizerName) {
-			for _, monitor := range list.Items {
-				if err := r.Delete(ctx, &monitor); err != nil {
-					r.Recorder.Event(ingress, "Warning", "DeleteMonitorFailed", err.Error())
-					return ctrl.Result{}, err
-				}
-			}
-
-			controllerutil.RemoveFinalizer(ingress, myFinalizerName)
-			if err := r.Update(ctx, ingress); err != nil {
-				r.Recorder.Event(ingress, "Warning", "RemoveFinalizerFailed", err.Error())
-				return ctrl.Result{}, err
-			}
-		}
-
-		return ctrl.Result{}, nil
-	}
-
-	annotations := r.getMatchingAnnotations(ingress)
-
-	var enabled bool
-	if val, ok := annotations[EnabledAnnotation]; ok {
-		if enabled, err = strconv.ParseBool(val); err != nil {
-			r.Recorder.Event(ingress, "Warning", "ParseAnnotationFailed",
-				"Parsing annotation "+strconv.Quote(IngressAnnotationPrefix+EnabledAnnotation)+": "+err.Error(),
-			)
-			return ctrl.Result{}, err
-		}
-	}
-
-	var create bool
-	if !enabled {
-		if controllerutil.ContainsFinalizer(ingress, myFinalizerName) {
-			// Delete existing Monitor
-			for _, monitor := range list.Items {
-				if err := r.Delete(ctx, &monitor); err != nil {
-					r.Recorder.Event(ingress, "Warning", "DeleteMonitorFailed", err.Error())
-					return ctrl.Result{}, err
-				}
-
-				r.Recorder.Event(ingress, "Normal", "DeleteMonitorSucceeded",
-					"Deleted monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String(),
-				)
-			}
-
-			controllerutil.RemoveFinalizer(ingress, myFinalizerName)
-			if err := r.Update(ctx, ingress); err != nil {
-				r.Recorder.Event(ingress, "Warning", "RemoveFinalizerFailed", err.Error())
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
-	} else if len(list.Items) == 0 {
-		// Create new Monitor
-		create = true
-		list.Items = append(list.Items, pulseticv1.Monitor{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      ingress.Name,
-				Namespace: req.Namespace,
-			},
-		})
-	}
-
-	for _, monitor := range list.Items {
-		if err := r.updateValues(ingress, &monitor, annotations); err != nil {
-			r.Recorder.Event(ingress, "Warning", "ParseAnnotationFailed", err.Error())
-			return ctrl.Result{}, err
-		}
-
-		if create {
-			if err := r.Create(ctx, &monitor); err != nil {
-				r.Recorder.Event(ingress, "Warning", "CreateMonitorFailed", err.Error())
-				return ctrl.Result{}, err
-			}
-			r.Recorder.Event(ingress, "Normal", "CreateMonitorSucceeded",
-				"Created monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String(),
-			)
-		} else {
-			if err := r.Update(ctx, &monitor); err != nil {
-				r.Recorder.Event(ingress, "Warning", "UpdateMonitorFailed", err.Error())
-				return ctrl.Result{}, err
-			}
-			r.Recorder.Event(ingress, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String())
-		}
-
-		monitor.Status.SourceRef = &corev1.TypedLocalObjectReference{
-			Kind: ingress.Kind,
-			Name: ingress.Name,
-		}
-
-		if err := r.Status().Update(ctx, &monitor); err != nil {
-			r.Recorder.Event(ingress, "Warning", "UpdateMonitorStatusFailed", err.Error())
-			return ctrl.Result{}, err
-		}
-	}
-
-	if !controllerutil.ContainsFinalizer(ingress, myFinalizerName) {
-		controllerutil.AddFinalizer(ingress, myFinalizerName)
-		if err := r.Update(ctx, ingress); err != nil {
-			r.Recorder.Event(ingress, "Warning", "AddFinalizerFailed", err.Error())
-			return ctrl.Result{}, err
-		}
-	}
 	return ctrl.Result{}, nil
 }
 
@@ -197,98 +74,35 @@ func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *IngressReconciler) findMonitors(
-	ctx context.Context,
-	ingress *networkingv1.Ingress,
-) (*pulseticv1.MonitorList, error) {
-	list := &pulseticv1.MonitorList{}
-	err := r.List(ctx, list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.sourceRef", ingress.Kind+"/"+ingress.Name),
-	})
-	if err != nil {
-		return list, err
-	}
-	return list, nil
-}
-
-func (r *IngressReconciler) countMatchingAnnotations(ingress *networkingv1.Ingress) uint {
-	var count uint
-	for k := range ingress.Annotations {
-		if strings.HasPrefix(k, IngressAnnotationPrefix) {
-			count++
-		}
-	}
-	return count
-}
-
-func (r *IngressReconciler) getMatchingAnnotations(ingress *networkingv1.Ingress) map[string]string {
-	count := r.countMatchingAnnotations(ingress)
-	if count == 0 {
-		return nil
-	}
-
-	annotations := make(map[string]string, count)
-	for k, v := range ingress.Annotations {
-		if strings.HasPrefix(k, IngressAnnotationPrefix) {
-			annotations[strings.TrimPrefix(k, IngressAnnotationPrefix)] = v
-		}
-	}
-	return annotations
-}
-
-func (r *IngressReconciler) updateValues(
-	ingress *networkingv1.Ingress,
-	monitor *pulseticv1.Monitor,
-	annotations map[string]string,
-) error {
-	monitor.Spec.Monitor.Name = ingress.Name
+func (r *IngressReconciler) getIngressValues(obj client.Object, annotations map[string]string) (string, error) {
+	ingress := obj.(*networkingv1.Ingress) //nolint:errcheck
 	if _, ok := annotations["monitor.url"]; !ok {
-		if len(ingress.Spec.Rules) != 0 {
-			var u url.URL
-			if u.Scheme, ok = annotations["monitor.scheme"]; !ok {
-				if len(ingress.Spec.TLS) == 0 {
-					u.Scheme = "http"
-				} else {
-					u.Scheme = "https"
-				}
+		u := url.URL{
+			Scheme: annotations["monitor.scheme"],
+			Host:   annotations["monitor.host"],
+			Path:   annotations["monitor.path"],
+		}
+
+		if u.Scheme == "" {
+			if len(ingress.Spec.TLS) == 0 {
+				u.Scheme = "http"
+			} else {
+				u.Scheme = "https"
 			}
+		}
+
+		if len(ingress.Spec.Rules) != 0 {
 			rule := ingress.Spec.Rules[0]
-			if u.Host, ok = annotations["monitor.host"]; !ok {
+			if u.Host == "" {
 				u.Host = rule.Host
 			}
-			if u.Path, ok = annotations["monitor.path"]; !ok && len(rule.HTTP.Paths) != 0 {
+			if u.Path == "" && len(rule.HTTP.Paths) != 0 {
 				if path := rule.HTTP.Paths[0].Path; path != "/" {
 					u.Path = path
 				}
 			}
-			monitor.Spec.Monitor.URL = u.String()
 		}
+		return u.String(), nil
 	}
-	delete(annotations, EnabledAnnotation)
-	delete(annotations, "monitor.url")
-	delete(annotations, "monitor.scheme")
-	delete(annotations, "monitor.host")
-	delete(annotations, "monitor.path")
-
-	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			util.DecodeHookMetav1Duration,
-			mapstructure.TextUnmarshallerHookFunc(),
-		),
-		ErrorUnused:      true,
-		WeaklyTypedInput: true,
-		Result:           &monitor.Spec,
-		TagName:          "json",
-		SquashTagOption:  "inline",
-	})
-	if err != nil {
-		return err
-	}
-
-	expanded := make(map[string]any, len(annotations))
-	for k, v := range annotations {
-		expanded[k] = v
-	}
-	expanded = maps.Unflatten(expanded, ".")
-	return dec.Decode(expanded)
+	return "", nil
 }

@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 //nolint:gochecknoglobals
@@ -47,6 +48,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(pulseticv1.AddToScheme(scheme))
+	utilruntime.Must(gatewayv1.Install(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -82,8 +84,8 @@ func main() {
 		controller.ClusterResourceNamespace,
 		"Namespace to store resources owned by cluster scoped resources",
 	)
-	flag.StringVar(&controller.IngressAnnotationPrefix, "ingress-annotation-prefix", controller.IngressAnnotationPrefix,
-		"Ingress annotation prefix",
+	flag.StringVar(&controller.AnnotationPrefix, "source-annotation-prefix", controller.AnnotationPrefix,
+		"Source annotation prefix",
 	)
 	opts := zap.Options{
 		Development: true,
@@ -237,6 +239,14 @@ func main() {
 		Recorder: mgr.GetEventRecorderFor("pulsetic-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ingress")
+		os.Exit(1)
+	}
+	if err = (&controller.HTTPRouteReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("pulsetic-controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "HTTPRoute")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

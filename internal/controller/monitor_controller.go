@@ -159,7 +159,7 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Monitor{}, "spec.sourceRef", func(rawObj client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Monitor{}, "status.sourceRef", func(rawObj client.Object) []string {
 		monitor := rawObj.(*pulseticv1.Monitor) //nolint:errcheck
 		if monitor.Status.SourceRef == nil {
 			return nil
