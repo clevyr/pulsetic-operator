@@ -5,8 +5,8 @@ go 1.24.5
 require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/knadh/koanf/maps v0.1.2
-	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/onsi/gomega v1.38.0
+	github.com/onsi/ginkgo/v2 v2.25.3
+	github.com/onsi/gomega v1.38.3
 	github.com/stretchr/testify v1.11.0
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
@@ -17,6 +17,7 @@ require (
 
 require (
 	cel.dev/expr v0.24.0 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
