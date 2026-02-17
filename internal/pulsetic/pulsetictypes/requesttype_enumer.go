@@ -15,9 +15,8 @@ var _RequestTypeIndex = [...]uint8{0, 4, 7, 11}
 const _RequestTypeLowerName = "httptcpicmp"
 
 func (i RequestType) String() string {
-	i -= 1
 	if i >= RequestType(len(_RequestTypeIndex)-1) {
-		return fmt.Sprintf("RequestType(%d)", i+1)
+		return fmt.Sprintf("RequestType(%d)", i)
 	}
 	return _RequestTypeName[_RequestTypeIndex[i]:_RequestTypeIndex[i+1]]
 }
@@ -26,9 +25,9 @@ func (i RequestType) String() string {
 // Re-run the stringer command to generate them again.
 func _RequestTypeNoOp() {
 	var x [1]struct{}
-	_ = x[RequestTypeHTTP-(1)]
-	_ = x[RequestTypeTCP-(2)]
-	_ = x[RequestTypeICMP-(3)]
+	_ = x[RequestTypeHTTP-(0)]
+	_ = x[RequestTypeTCP-(1)]
+	_ = x[RequestTypeICMP-(2)]
 }
 
 var _RequestTypeValues = []RequestType{RequestTypeHTTP, RequestTypeTCP, RequestTypeICMP}

@@ -8,16 +8,15 @@ import (
 	"strings"
 )
 
-const _RequestMethodName = "GETPOSTPUTPATCHDELETEHEADOPTIONS"
+const _RequestMethodName = "HEADGETPOSTPUTPATCHDELETEOPTIONS"
 
-var _RequestMethodIndex = [...]uint8{0, 3, 7, 10, 15, 21, 25, 32}
+var _RequestMethodIndex = [...]uint8{0, 4, 7, 11, 14, 19, 25, 32}
 
-const _RequestMethodLowerName = "getpostputpatchdeleteheadoptions"
+const _RequestMethodLowerName = "headgetpostputpatchdeleteoptions"
 
 func (i RequestMethod) String() string {
-	i -= 1
 	if i >= RequestMethod(len(_RequestMethodIndex)-1) {
-		return fmt.Sprintf("RequestMethod(%d)", i+1)
+		return fmt.Sprintf("RequestMethod(%d)", i)
 	}
 	return _RequestMethodName[_RequestMethodIndex[i]:_RequestMethodIndex[i+1]]
 }
@@ -26,41 +25,41 @@ func (i RequestMethod) String() string {
 // Re-run the stringer command to generate them again.
 func _RequestMethodNoOp() {
 	var x [1]struct{}
+	_ = x[MethodHEAD-(0)]
 	_ = x[MethodGET-(1)]
 	_ = x[MethodPOST-(2)]
 	_ = x[MethodPUT-(3)]
 	_ = x[MethodPATCH-(4)]
 	_ = x[MethodDELETE-(5)]
-	_ = x[MethodHEAD-(6)]
-	_ = x[MethodOPTIONS-(7)]
+	_ = x[MethodOPTIONS-(6)]
 }
 
-var _RequestMethodValues = []RequestMethod{MethodGET, MethodPOST, MethodPUT, MethodPATCH, MethodDELETE, MethodHEAD, MethodOPTIONS}
+var _RequestMethodValues = []RequestMethod{MethodHEAD, MethodGET, MethodPOST, MethodPUT, MethodPATCH, MethodDELETE, MethodOPTIONS}
 
 var _RequestMethodNameToValueMap = map[string]RequestMethod{
-	_RequestMethodName[0:3]:        MethodGET,
-	_RequestMethodLowerName[0:3]:   MethodGET,
-	_RequestMethodName[3:7]:        MethodPOST,
-	_RequestMethodLowerName[3:7]:   MethodPOST,
-	_RequestMethodName[7:10]:       MethodPUT,
-	_RequestMethodLowerName[7:10]:  MethodPUT,
-	_RequestMethodName[10:15]:      MethodPATCH,
-	_RequestMethodLowerName[10:15]: MethodPATCH,
-	_RequestMethodName[15:21]:      MethodDELETE,
-	_RequestMethodLowerName[15:21]: MethodDELETE,
-	_RequestMethodName[21:25]:      MethodHEAD,
-	_RequestMethodLowerName[21:25]: MethodHEAD,
+	_RequestMethodName[0:4]:        MethodHEAD,
+	_RequestMethodLowerName[0:4]:   MethodHEAD,
+	_RequestMethodName[4:7]:        MethodGET,
+	_RequestMethodLowerName[4:7]:   MethodGET,
+	_RequestMethodName[7:11]:       MethodPOST,
+	_RequestMethodLowerName[7:11]:  MethodPOST,
+	_RequestMethodName[11:14]:      MethodPUT,
+	_RequestMethodLowerName[11:14]: MethodPUT,
+	_RequestMethodName[14:19]:      MethodPATCH,
+	_RequestMethodLowerName[14:19]: MethodPATCH,
+	_RequestMethodName[19:25]:      MethodDELETE,
+	_RequestMethodLowerName[19:25]: MethodDELETE,
 	_RequestMethodName[25:32]:      MethodOPTIONS,
 	_RequestMethodLowerName[25:32]: MethodOPTIONS,
 }
 
 var _RequestMethodNames = []string{
-	_RequestMethodName[0:3],
-	_RequestMethodName[3:7],
-	_RequestMethodName[7:10],
-	_RequestMethodName[10:15],
-	_RequestMethodName[15:21],
-	_RequestMethodName[21:25],
+	_RequestMethodName[0:4],
+	_RequestMethodName[4:7],
+	_RequestMethodName[7:11],
+	_RequestMethodName[11:14],
+	_RequestMethodName[14:19],
+	_RequestMethodName[19:25],
 	_RequestMethodName[25:32],
 }
 

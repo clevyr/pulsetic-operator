@@ -8,11 +8,11 @@ package pulsetictypes
 type RequestMethod uint8
 
 const (
-	MethodGET RequestMethod = iota + 1
+	MethodHEAD RequestMethod = iota
+	MethodGET
 	MethodPOST
 	MethodPUT
 	MethodPATCH
 	MethodDELETE
-	MethodHEAD
 	MethodOPTIONS
 )
