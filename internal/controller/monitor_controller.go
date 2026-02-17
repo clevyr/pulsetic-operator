@@ -121,13 +121,22 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				", next run in "+monitor.Spec.Interval.Duration.String(),
 		)
 	} else {
-		psmonitor, err = psclient.Monitors().Update(ctx, psmonitor.ID, monitor.Spec.Monitor.ToMonitor(account.Spec.MonitorDefaults))
+		psmonitor, err = psclient.Monitors().Update(
+			ctx, psmonitor.ID, monitor.Spec.Monitor.ToMonitor(account.Spec.MonitorDefaults),
+		)
 		if err != nil {
 			r.Recorder.Event(monitor, "Warning", "UpdateMonitorFailed", err.Error())
 			return ctrl.Result{}, err
 		}
 
-		r.Recorder.Event(monitor, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String()+", next run in "+monitor.Spec.Interval.Duration.String())
+		r.Recorder.Event(
+			monitor, "Normal", "UpdateMonitorSucceeded",
+			"Updated monitor "+strconv.Quote(
+				monitor.Name,
+			)+" in "+time.Since(start).
+				String()+
+				", next run in "+monitor.Spec.Interval.Duration.String(),
+		)
 	}
 
 	if monitor.Spec.Account.Name == "" {
@@ -159,13 +168,14 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Monitor{}, "status.sourceRef", func(rawObj client.Object) []string {
-		monitor := rawObj.(*pulseticv1.Monitor) //nolint:errcheck
-		if monitor.Status.SourceRef == nil {
-			return nil
-		}
-		return []string{monitor.Status.SourceRef.Kind + "/" + monitor.Status.SourceRef.Name}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &pulseticv1.Monitor{}, "status.sourceRef", func(rawObj client.Object) []string {
+			monitor := rawObj.(*pulseticv1.Monitor) //nolint:errcheck
+			if monitor.Status.SourceRef == nil {
+				return nil
+			}
+			return []string{monitor.Status.SourceRef.Kind + "/" + monitor.Status.SourceRef.Name}
+		}); err != nil {
 		return err
 	}
 

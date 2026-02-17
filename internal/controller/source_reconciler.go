@@ -153,7 +153,10 @@ func (r *SourceReconciler) ReconcileSource(
 				r.Recorder.Event(obj, "Warning", "UpdateMonitorFailed", err.Error())
 				return err
 			}
-			r.Recorder.Event(obj, "Normal", "UpdateMonitorSucceeded", "Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String())
+			r.Recorder.Event(
+				obj, "Normal", "UpdateMonitorSucceeded",
+				"Updated monitor "+strconv.Quote(monitor.Name)+" in "+time.Since(start).String(),
+			)
 		}
 
 		monitor.Status.SourceRef = &corev1.TypedLocalObjectReference{

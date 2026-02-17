@@ -127,7 +127,9 @@ func (m MonitorValues) ToMonitor(defaults *MonitorDefaults) pulsetic.Monitor {
 	if timeout := util.FirstValue(m.Timeout, defaults.Timeout); timeout != nil {
 		v.RequestTimeout = timeout.Seconds()
 	}
-	if offlineDelay := util.FirstValue(m.OfflineNotificationDelay, defaults.OfflineNotificationDelay); offlineDelay != nil {
+	if offlineDelay := util.FirstValue(
+		m.OfflineNotificationDelay, defaults.OfflineNotificationDelay,
+	); offlineDelay != nil {
 		v.OfflineNotificationDelay = int(offlineDelay.Minutes() + 0.5)
 	}
 	return v

@@ -97,13 +97,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &pulseticv1.Account{}, "spec.isDefault", func(rawObj client.Object) []string {
-		account := rawObj.(*pulseticv1.Account) //nolint:errcheck
-		if !account.Spec.IsDefault {
-			return nil
-		}
-		return []string{"true"}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &pulseticv1.Account{}, "spec.isDefault", func(rawObj client.Object) []string {
+			account := rawObj.(*pulseticv1.Account) //nolint:errcheck
+			if !account.Spec.IsDefault {
+				return nil
+			}
+			return []string{"true"}
+		}); err != nil {
 		return err
 	}
 
