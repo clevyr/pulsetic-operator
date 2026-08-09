@@ -4,7 +4,7 @@ go 1.24.5
 
 require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
-	github.com/knadh/koanf/maps v0.1.2
+	github.com/knadh/koanf/maps v0.1.3
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.38.0
 	github.com/stretchr/testify v1.11.0
