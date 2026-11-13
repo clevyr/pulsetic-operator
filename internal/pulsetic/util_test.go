@@ -54,3 +54,33 @@ func TestUnixOrTime_UnmarshalJSON(t *testing.T) {
 		assert.True(t, tt.want.Equal(time.Time(v)))
 	}
 }
+
+func TestURLsEqual(t *testing.T) {
+	const (
+		root = "https://example.com"
+		path = root + "/up"
+	)
+
+	tests := []struct {
+		name string
+		a, b string
+		want bool
+	}{
+		{"same", root, root, true},
+		{"root slash on b", root, root + "/", true},
+		{"root slash on a", root + "/", root, true},
+		{"path slash on b", path, path + "/", true},
+		{"path slash on a", path + "/", path, true},
+		{"different path", path, root + "/down", false},
+		{"different host", root, "https://www.example.com", false},
+		{"host case", root, "https://Example.COM", true},
+		{"path case", path, root + "/UP", true},
+		{"case and slash", root + "/", "HTTPS://EXAMPLE.COM", true},
+		{"different host case", root, "https://www.Example.com", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, URLsEqual(tt.a, tt.b))
+		})
+	}
+}

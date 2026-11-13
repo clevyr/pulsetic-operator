@@ -140,7 +140,7 @@ func (m MonitorClient) FindByID(ctx context.Context, id int64) (Monitor, error) 
 
 func (m MonitorClient) FindByURL(ctx context.Context, url string) (Monitor, error) {
 	for monitor, err := range m.List(ctx) {
-		if err != nil || monitor.URL == url || monitor.URL+"/" == url {
+		if err != nil || URLsEqual(monitor.URL, url) {
 			return monitor, err
 		}
 	}

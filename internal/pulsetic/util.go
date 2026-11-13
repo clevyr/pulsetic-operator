@@ -35,6 +35,11 @@ func (e ResponseError) Error() string {
 	return buf.String()
 }
 
+// URLsEqual checks whether a and b are loosely the same URL.
+func URLsEqual(a, b string) bool {
+	return strings.EqualFold(strings.TrimSuffix(a, "/"), strings.TrimSuffix(b, "/"))
+}
+
 func consumeAndClose(r io.ReadCloser) {
 	_, _ = io.Copy(io.Discard, r)
 	_ = r.Close()
