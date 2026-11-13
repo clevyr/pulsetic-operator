@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2025.
 
@@ -20,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/clevyr/pulsetic-operator/test/utils"
@@ -34,8 +37,9 @@ var (
 	// These variables are useful if CertManager is already installed, avoiding
 	// re-installation and conflicts.
 	skipCertManagerInstall = os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true"
-	// isCertManagerAlreadyInstalled will be set true when CertManager CRDs be found on the cluster.
-	isCertManagerAlreadyInstalled = false
+	// shouldCleanupCertManager is only set true once this suite installs CertManager itself,
+	// so a failure earlier in BeforeSuite can never uninstall a pre-existing CertManager.
+	shouldCleanupCertManager = false
 
 	// projectImage is the name of the image which will be build and loaded
 	// with the code source changes to be tested.
@@ -47,6 +51,16 @@ var (
 // The default setup requires Kind, builds/loads the Manager Docker image locally, and installs
 // CertManager.
 func TestE2E(t *testing.T) {
+	// Refuse to run against anything but a Kind cluster. The suite installs and uninstalls
+	// CertManager, CRDs, and namespaces in the current kube context.
+	out, err := exec.Command("kubectl", "config", "current-context").Output()
+	if err != nil {
+		t.Fatalf("Failed to get current kube context: %v", err)
+	}
+	if kubeContext := strings.TrimSpace(string(out)); !strings.HasPrefix(kubeContext, "kind-") {
+		t.Fatalf("Refusing to run e2e tests against non-Kind context %q", kubeContext)
+	}
+
 	RegisterFailHandler(Fail)
 	_, _ = fmt.Fprintf(GinkgoWriter, "Starting pulsetic-operator integration test suite\n")
 	RunSpecs(t, "e2e suite")
@@ -71,8 +85,8 @@ var _ = BeforeSuite(func() {
 	// Setup CertManager before the suite if not skipped and if not already installed
 	if !skipCertManagerInstall {
 		By("checking if cert manager is installed already")
-		isCertManagerAlreadyInstalled = utils.IsCertManagerCRDsInstalled()
-		if !isCertManagerAlreadyInstalled {
+		if !utils.IsCertManagerCRDsInstalled() {
+			shouldCleanupCertManager = true
 			_, _ = fmt.Fprintf(GinkgoWriter, "Installing CertManager...\n")
 			Expect(utils.InstallCertManager()).To(Succeed(), "Failed to install CertManager")
 		} else {
@@ -83,7 +97,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	// Teardown CertManager after the suite if not skipped and if it was not already installed
-	if !skipCertManagerInstall && !isCertManagerAlreadyInstalled {
+	if shouldCleanupCertManager {
 		_, _ = fmt.Fprintf(GinkgoWriter, "Uninstalling CertManager...\n")
 		utils.UninstallCertManager()
 	}

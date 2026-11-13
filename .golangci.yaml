@@ -1,5 +1,9 @@
 version: "2"
 
+run:
+  build-tags:
+    - e2e
+
 issues:
   max-same-issues: 50
 
