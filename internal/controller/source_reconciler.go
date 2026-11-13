@@ -57,7 +57,7 @@ func (r *SourceReconciler) ReconcileSource(
 ) error {
 	start := time.Now()
 
-	list, err := r.findMonitors(ctx, kind, obj.GetName())
+	list, err := r.findMonitors(ctx, kind, obj.GetNamespace(), obj.GetName())
 	if err != nil {
 		r.Recorder.Event(obj, "Warning", "FindMonitorFailed", err.Error())
 		return err
@@ -182,11 +182,12 @@ func (r *SourceReconciler) ReconcileSource(
 
 func (r *SourceReconciler) findMonitors(
 	ctx context.Context,
-	kind, name string,
+	kind, namespace, name string,
 ) (*pulseticv1.MonitorList, error) {
 	list := &pulseticv1.MonitorList{}
 	err := r.List(ctx, list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("status.sourceRef", kind+"/"+name),
+		Namespace:     namespace,
+		FieldSelector: fields.OneTermEqualSelector(SourceRefIndex, kind+"/"+name),
 	})
 	if err != nil {
 		return list, err
